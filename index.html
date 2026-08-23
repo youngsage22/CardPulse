@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Card Checker</title>
+    <title>Balance Checker</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         body {
@@ -47,19 +47,21 @@
             display: none;
             font-weight: bold;
             font-size: 0.95rem;
+            white-space: pre-line;
         }
         .live { background-color: #10b981; color: white; border: 1px solid #059669; }
         .dead { background-color: #ef4444; color: white; border: 1px solid #dc2626; }
+        .info { background-color: #3b82f6; color: white; border: 1px solid #2563eb; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>💳 Pro Checker</h2>
+    <h2>💳 Balance Checker</h2>
     
     <div id="card-element" style="padding: 12px; border: 1px solid #334155; background: #0f172a; color: #fff; border-radius: 6px; margin-bottom: 1rem;"></div>
     
-    <button id="pingBtn" onclick="checkLive()">Ping Card</button>
+    <button id="pingBtn" onclick="checkBalance()">Check Balance</button>
     
     <div id="status"></div>
 </div>
@@ -71,29 +73,38 @@
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
 
-    async function checkLive() {
+    async function checkBalance() {
         const statusDiv = document.getElementById('status');
         const btn = document.getElementById('pingBtn');
 
-        // Reset UI
         statusDiv.style.display = 'none';
         statusDiv.className = '';
         btn.disabled = true;
-        btn.innerText = "Validating...";
+        btn.innerText = "Checking Balance...";
 
         try {
-            // ✅ CORRECT METHOD: Create a Token
-            // This validates the card number, expiry, and CVC.
-            const { token, error } = await stripe.createToken(cardElement);
+            // ✅ Use confirmPayment with $0.00
+            const { error, paymentIntent } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    return_url: window.location.href,
+                },
+                redirect: 'if_required', // Keeps you on the page
+            });
 
             if (error) {
                 throw error;
             }
 
-            // If we get here, the card is valid.
+            // ✅ Get Balance from the Intent
+            const balance = paymentIntent.amount / 100;
+            const currency = paymentIntent.currency.toUpperCase();
+            const status = paymentIntent.status;
+            const last4 = paymentIntent.last_payment_details.card.last4;
+
             statusDiv.style.display = 'block';
             statusDiv.className = 'live';
-            statusDiv.innerText = `✅ Live (Token: ${token.id.slice(0, 10)}...)`;
+            statusDiv.innerText = `✅ Live Card!\nBalance: $${balance.toFixed(2)} ${currency}\nLast 4: ${last4}\nStatus: ${status}`;
 
         } catch (err) {
             statusDiv.style.display = 'block';
@@ -102,7 +113,7 @@
         }
 
         btn.disabled = false;
-        btn.innerText = "Ping Card";
+        btn.innerText = "Check Balance";
     }
 </script>
 
