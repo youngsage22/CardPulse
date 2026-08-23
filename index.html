@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro CC Suite</title>
+    <title>Pro CC Suite v2</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         :root {
@@ -84,8 +84,14 @@
         .dead { background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: var(--danger); }
         .info { background-color: rgba(59, 130, 246, 0.2); border: 1px solid var(--primary); color: var(--primary); }
 
-        .row { display: flex; gap: 10px; }
-        .col { flex: 1; }
+        /* Stripe Element Container Styling */
+        .stripe-wrapper {
+            padding: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -97,10 +103,10 @@
         <h2>🎲 CC Generator</h2>
         <label>Card Network</label>
         <select id="genNetwork">
-            <option value="">Random</option>
+            <option value="">Random (Auto-Detect)</option>
             <option value="visa">Visa</option>
             <option value="mastercard">Mastercard</option>
-            <option value="amex">Amex</option>
+            <option value="amex">Amex (15 Digits)</option>
         </select>
         <button onclick="generateCC()">Generate Random Card</button>
         <button class="secondary" onclick="copyToClipboard()">Copy Generated</button>
@@ -118,7 +124,7 @@
     <!-- SECTION 3: CHECKER -->
     <div class="panel">
         <h2>💳 Live Checker</h2>
-        <div id="stripe-container"></div>
+        <div class="stripe-wrapper" id="stripe-container"></div>
         <button id="checkBtn" onclick="checkLive()">Check Balance</button>
         <div id="status" class="output"></div>
     </div>
@@ -126,23 +132,28 @@
 </div>
 
 <script>
-    // 🔑 YOUR PUBLISHABLE KEY
-    const stripe = Stripe('pk_test_51U7cR15QRAPh6Gb2aaHJLny4UGoIQjUqmOSTxQAnisN4Ms3FRdkBtSVeKaIuFUN8C2ijNdrPa6YKgFuHfOFjp4xL000rKID5gY');
+    // 🔑 REPLACE WITH YOUR STRIPE KEY
+    // If this is wrong, the "Stripe Element" box will be empty.
+    const stripe = Stripe('pk_test_51U7cR15QRAPh6Gb2aaHJLny4UGoIQjUqmOSTxQAnisN4Ms3FRdkBtSVeKaIuFUN8C2ijNdrPa6YKgFuHfOFjp4xL000rKID5gY'); 
     const elements = stripe.elements();
     let cardEl = null;
 
     // 1. INIT STRIPE
-    const cardElement = elements.create('card');
-    cardElement.mount('#stripe-container');
-    cardEl = cardElement;
+    try {
+        const cardElement = elements.create('card');
+        cardElement.mount('#stripe-container');
+        cardEl = cardElement;
+    } catch (e) {
+        document.getElementById('stripe-container').innerHTML = '<span style="color: var(--danger);">Stripe Key Error: Check your Key!</span>';
+    }
 
     // 2. GENERATOR LOGIC
     function generateCC() {
         const network = document.getElementById('genNetwork').value;
-        const prefix = network === 'visa' ? '4' : 
-                       network === 'mastercard' ? '5' : 
-                       network === 'amex' ? '34' : 
-                       Math.random() > 0.5 ? '4' : '5';
+        let prefix = network === 'visa' ? '4' : 
+                     network === 'mastercard' ? '5' : 
+                     network === 'amex' ? '34' : 
+                     Math.random() > 0.5 ? '4' : '5';
         
         let length = network === 'amex' ? 15 : 16;
         let num = prefix;
