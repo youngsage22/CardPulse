@@ -1,118 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Pro Stripe Elements Checker</title>
+    <title>Stripe Elements Fix</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        body { background: #0f111a; color: white; font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
-        .checker { background: #1a1c28; padding: 20px; border-radius: 12px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 12px; }
-        #card-element { background: #0b0c12; padding: 15px; border: 1px solid #333; border-radius: 6px; margin-bottom: 15px; }
-        /* Stripe Elements injects an iframe here */
-        button { width: 100%; padding: 12px; background: #5e72e4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        button:disabled { background: #444; }
-        #status { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 14px; min-height: 40px; }
-        .live { background: rgba(45, 206, 137, 0.2); color: #2dce89; border-left: 4px solid #2dce89; }
-        .dead { background: rgba(245, 54, 92, 0.2); color: #f5365c; border-left: 4px solid #f5365c; }
-        .loading { background: rgba(94, 114, 228, 0.2); color: #5e72e4; }
+        #card-element { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="checker">
-    <h2 style="text-align:center; margin-top:0; color:#ccc;">Stripe Elements Pro</h2>
-    
-    <label>CARD DETAILS</label>
-    <!-- This div is where Stripe Elements will render the secure input fields -->
-    <div id="card-element"></div>
-    
-    <button id="btn" onclick="checkCard()">CHECK LIVE</button>
-    <div id="status" class="dead">Waiting...</div>
+<div id="card-element">
+    <!-- Stripe Elements will inject the secure input fields here -->
 </div>
+<button id="btn">Pay</button>
 
 <script>
-    // 🔑 REPLACE WITH YOUR LIVE KEY
-    const stripe = Stripe('pk_live_51U7cR15QRAPh6Gb2sSeyfCbNLvb3hio2CnIaw6gEcYs87Jek1lLegvEfc4FTojBfLDEunyrZCpXQl238hSOKaGow00u33ixWeP');
+    // 🔑 REPLACE WITH YOUR PUBLISHABLE KEY
+    const stripe = Stripe('pk_test_TYooMQauvdEDq54NiTphI7jx');
     const elements = stripe.elements();
-    
-    // Create the card element
+
+    // 1. Create the Card Element
     const cardElement = elements.create('card', {
         style: {
             base: {
-                color: '#ffffff',
-                fontFamily: 'Arial, sans-serif',
-                fontSmoothing: 'antialiased',
                 fontSize: '16px',
-                '::placeholder': { color: '#555' },
+                color: '#424770',
+                '::placeholder': { color: '#aab7c4' },
             },
-            invalid: { color: '#f5365c' },
+            invalid: { color: '#9e2146' },
         }
     });
 
-    // Mount the element to the div
+    // 2. Mount the Element to the DOM
     cardElement.mount('#card-element');
 
-    async function checkCard() {
-        const statusDiv = document.getElementById('status');
+    document.getElementById('btn').addEventListener('click', async () => {
         const btn = document.getElementById('btn');
-        
         btn.disabled = true;
-        btn.innerText = 'Checking...';
-        statusDiv.className = 'loading';
-        statusDiv.innerText = 'Processing...';
+        btn.textContent = 'Processing...';
 
-        // Create a PaymentMethod
-        const { paymentMethod, error } = await stripe.createPaymentMethod({
-            type: 'card',
-            card: cardElement,
-        });
-
-        if (error) {
-            statusDiv.className = 'dead';
-            statusDiv.innerText = '❌ Error: ' + error.message;
-            btn.disabled = false;
-            btn.innerText = 'CHECK LIVE';
-            return;
-        }
-
-        // Analyze the result
-        const brand = paymentMethod.card.brand;
-        const last4 = paymentMethod.card.last4;
-        const expMonth = paymentMethod.card.exp_month;
-        const expYear = paymentMethod.card.exp_year;
-        const country = paymentMethod.card.country;
-        const funding = paymentMethod.card.funding; // 'credit', 'debit', 'prepaid', 'unknown'
-
-        // Simple heuristic for "Live" vs "Dead" based on Stripe's response
-        // If Stripe returns a PaymentMethod ID, the card format is valid.
-        // If CVC check is 'pass' or country is present, it's likely live.
-        
-        let status = 'dead';
-        let msg = '❌ DEAD (Invalid Card)';
-
-        if (paymentMethod.id) {
-            // Check if it's a credit/debit/prepaid card (not unknown)
-            if (funding !== 'unknown') {
-                status = 'live';
-                msg = `✅ LIVE (${brand.toUpperCase()} - ${funding.toUpperCase()})`;
+        // 3. Correct Way: Create a Token/PaymentMethod using the Element instance
+        try {
+            const result = await stripe.createToken(cardElement);
+            
+            if (result.error) {
+                // Show error in your UI
+                console.error(result.error.message);
+                btn.disabled = false;
+                btn.textContent = 'Pay';
             } else {
-                msg = `⚠️ UNKNOWN (Valid Format)`;
+                // Token created successfully
+                console.log('Token:', result.token);
+                // Send result.token.id to your backend
+                alert('Success! Token ID: ' + result.token.id);
             }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Pay';
         }
-
-        statusDiv.className = status === 'live' ? 'live' : 'dead';
-        statusDiv.innerHTML = `
-            <strong>${msg}</strong><br>
-            Last 4: ${last4}<br>
-            Exp: ${expMonth}/${expYear}<br>
-            Country: ${country || 'N/A'}<br>
-            <small>ID: ${paymentMethod.id}</small>
-        `;
-        
-        btn.disabled = false;
-        btn.innerText = 'CHECK LIVE';
-    }
+    });
 </script>
 
 </body>
