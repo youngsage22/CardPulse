@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pure Card Ping</title>
-    <!-- Stripe.js Library -->
+    <title>Pro Card Ping</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         body {
@@ -27,8 +26,9 @@
         }
         h2 { text-align: center; margin-bottom: 1.5rem; }
         label { display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem; }
-        input {
-            width: 100%;
+        
+        /* Stripe Element Styling */
+        .stripe-input {
             padding: 12px;
             margin-bottom: 1rem;
             border: 1px solid #334155;
@@ -38,7 +38,7 @@
             box-sizing: border-box;
             font-size: 1rem;
         }
-        input:focus { outline: none; border-color: #3b82f6; }
+        
         button {
             width: 100%;
             padding: 12px;
@@ -68,37 +68,26 @@
 <body>
 
 <div class="container">
-    <h2>Card Ping 🚀</h2>
+    <h2>Pro Card Ping 🚀</h2>
     
-    <label>Card Number</label>
-    <input type="text" id="number" placeholder="4242 4242 4242 4242" maxlength="19">
-
-    <label>Expiry (MM/YY)</label>
-    <input type="text" id="exp" placeholder="12/25" maxlength="5">
-
-    <label>CVC</label>
-    <input type="text" id="cvc" placeholder="123" maxlength="4">
-
-    <button id="pingBtn" onclick="checkCard()">Ping Card</button>
+    <!-- These IDs must match the JS below -->
+    <div id="card-element" class="stripe-input"></div>
+    
+    <button id="pingBtn" onclick="pingCard()">Ping Card</button>
     
     <div id="status"></div>
 </div>
 
 <script>
     // ⚠️ REPLACE WITH YOUR STRIPE PUBLISHABLE KEY
-    const stripe = Stripe('pk_test_TYooMQauvdEDq54NiTphI7jx'); 
+    const stripe = Stripe('pk_test_YOUR_PUBLISHABLE_KEY_HERE');
+    const elements = stripe.elements();
+    const cardElement = elements.create('card');
+    cardElement.mount('#card-element');
 
-    async function checkCard() {
-        const number = document.getElementById('number').value;
-        const exp = document.getElementById('exp').value;
-        const cvc = document.getElementById('cvc').value;
+    async function pingCard() {
         const statusDiv = document.getElementById('status');
         const btn = document.getElementById('pingBtn');
-
-        if (!number || !exp || !cvc) {
-            alert("Please fill in all fields.");
-            return;
-        }
 
         // Reset UI
         statusDiv.style.display = 'none';
@@ -107,49 +96,25 @@
         btn.innerText = "Pinging...";
 
         try {
-            // 1. Create a PaymentMethod
-            const { paymentMethod, error } = await stripe.createPaymentMethod({
-                type: 'card',
-                card: {
-                    number,
-                    exp_month: parseInt(exp.split('/')[0]),
-                    exp_year: parseInt(exp.split('/')[1]),
-                    cvc
-                }
-            });
+            // This creates a token and validates the card instantly
+            const { token, error } = await stripe.createToken(cardElement);
 
             if (error) {
                 throw error;
             }
 
-            // 2. Create a PaymentIntent to "Authorize" the card
-            // We use $0.50 (50 cents) to be safe. This will usually appear as a pending charge.
-            const { paymentIntent, error: intentError } = await stripe.createPaymentIntent({
-                amount: 50, 
-                currency: 'usd',
-                payment_method: paymentMethod.id,
-                confirm: true,
-                // 'manual' means we don't capture the funds immediately, 
-                // but it still validates the card.
-                capture_method: 'manual' 
-            });
-
+            // If we reach here, the card is valid. 
+            // We don't actually charge it, we just "ping" it.
             statusDiv.style.display = 'block';
+            statusDiv.className = 'live';
+            statusDiv.innerText = `✅ Live (Token: ${token.id})`;
             btn.disabled = false;
             btn.innerText = "Ping Card";
-
-            if (intentError) {
-                statusDiv.className = 'dead';
-                statusDiv.innerText = `❌ Declined: ${intentError.message}`;
-            } else {
-                statusDiv.className = 'live';
-                statusDiv.innerText = '✅ Approved (Check your bank for pending $0.50)';
-            }
 
         } catch (err) {
             statusDiv.style.display = 'block';
             statusDiv.className = 'dead';
-            statusDiv.innerText = '❌ Network Error';
+            statusDiv.innerText = `❌ Declined: ${err.message}`;
             btn.disabled = false;
             btn.innerText = "Ping Card";
         }
