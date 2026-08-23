@@ -3,272 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stripe Live Checker</title>
-    <!-- Stripe JS Library -->
+    <title>Pro Stripe Checker & Charger</title>
     <script src="https://js.stripe.com/v3/"></script>
-    <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
+        :root {
+            --bg: #0f111a;
+            --panel: #1a1c28;
+            --accent: #6e7681;
+            --live: #2dce89;
+            --dead: #f5365c;
+            --loading: #5e72e4;
+            --text: #ffffff;
+        }
+
         body {
-            background-color: #0f0f13;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
         }
 
-        .checker-container {
-            background: #1a1a24;
+        .checker {
+            background: var(--panel);
             padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 350px;
+            border-radius: 16px;
+            width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             border: 1px solid #333;
         }
 
-        .panel-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #333;
-            padding-bottom: 1rem;
-        }
-
-        .panel-header h2 {
-            margin: 0;
-            font-size: 1.2rem;
-            color: #a8a8b3;
-        }
-
-        .panel-header i {
-            color: #6e7681;
-            margin-right: 8px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.85rem;
-            color: #888;
-        }
-
+        h2 { text-align: center; margin-top: 0; color: #ccc; font-size: 1.2rem; letter-spacing: 1px; }
+        
+        .input-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.8rem; color: var(--accent); margin-bottom: 0.5rem; }
+        
         input {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            background: #0b0b10;
+            padding: 12px;
+            background: #0b0c12;
             border: 1px solid #333;
             color: white;
-            border-radius: 6px;
+            border-radius: 8px;
             box-sizing: border-box;
             font-size: 1rem;
+            transition: 0.2s;
         }
+        input:focus { border-color: var(--loading); outline: none; }
 
-        input:focus {
-            outline: none;
-            border-color: #5e72e4;
-        }
+        .row { display: flex; gap: 10px; }
+        .row input { margin-bottom: 1rem; }
 
         button {
             width: 100%;
-            padding: 12px;
-            background: linear-gradient(45deg, #5e72e4, #825ee4);
+            padding: 14px;
+            background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%);
             border: none;
             color: white;
-            font-weight: bold;
-            border-radius: 6px;
+            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
-            transition: opacity 0.2s;
+            transition: transform 0.1s;
         }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #444; cursor: not-allowed; opacity: 0.7; }
 
-        button:hover {
-            opacity: 0.9;
-        }
-
-        button:disabled {
-            background: #444;
-            cursor: not-allowed;
-        }
-
-        .output-box {
-            margin-top: 15px;
-            padding: 15px;
-            background: #0b0b10;
-            border-radius: 6px;
+        .result-box {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            background: #0b0c12;
+            border-left: 4px solid #555;
             font-size: 0.9rem;
-            min-height: 60px;
-            word-break: break-all;
-            border-left: 4px solid transparent;
+            min-height: 100px;
         }
 
-        .active {
-            border-left-color: #5e72e4;
-            animation: pulse 1s infinite;
-        }
+        .status-live { border-color: var(--live); color: var(--live); background: rgba(45, 206, 137, 0.1); }
+        .status-dead { border-color: var(--dead); color: var(--dead); background: rgba(245, 54, 92, 0.1); }
+        .status-load { border-color: var(--loading); color: var(--loading); animation: pulse 1s infinite; }
 
-        .live {
-            border-left-color: #2dce89;
-            color: #2dce89;
-            background: rgba(45, 206, 137, 0.1);
-        }
-
-        .dead {
-            border-left-color: #f5365c;
-            color: #f5365c;
-            background: rgba(245, 54, 92, 0.1);
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         
-        .status-msg {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
+        .icon { margin-right: 8px; }
     </style>
 </head>
 <body>
 
-<div class="checker-container">
-    <div class="panel-header">
-        <h2><i class="fa-solid fa-satellite-dish"></i> Live Checker</h2>
+<div class="checker">
+    <h2><i class="fa-solid fa-bolt"></i> PRO CHECKER V2</h2>
+
+    <div class="input-group">
+        <label>CARD NUMBER</label>
+        <input type="text" id="cardNum" placeholder="0000 0000 0000 0000" maxlength="19">
     </div>
 
-    <label>Card Number</label>
-    <input type="text" id="cardNumber" placeholder="4242 4242 4242 4242" maxlength="19">
-    
-    <label>Expiration</label>
-    <input type="text" id="cardExp" placeholder="MM/YY" maxlength="5">
+    <div class="row">
+        <div class="input-group" style="flex:1">
+            <label>EXPIRY</label>
+            <input type="text" id="cardExp" placeholder="MM/YY" maxlength="5">
+        </div>
+        <div class="input-group" style="flex:1">
+            <label>CVC</label>
+            <input type="text" id="cardCvc" placeholder="123" maxlength="4">
+        </div>
+    </div>
 
-    <label>CVC</label>
-    <input type="text" id="cardCvc" placeholder="123" maxlength="4">
+    <div class="input-group">
+        <label>NAME ON CARD</label>
+        <input type="text" id="cardName" placeholder="Full Name" style="margin-bottom: 1rem;">
+    </div>
 
-    <label>Name on Card</label>
-    <input type="text" id="cardName" placeholder="JOHN DOE">
-
-    <button id="btnCheck" onclick="checkCard()">
-        <i class="fa-solid fa-check-circle"></i> CHECK LIVE
+    <button id="btn" onclick="runCheck()">
+        <i class="fa-solid fa-check"></i> CHECK LIVE
     </button>
 
-    <div id="status" class="output-box">Ready to check...</div>
+    <div id="res" class="result-box">Waiting for input...</div>
 </div>
 
 <script>
-    // 🔑 REPLACE WITH YOUR LIVE KEY
+    // 🔑 REPLACE WITH YOUR STRIPE KEY
     const stripe = Stripe('pk_live_51U7cR15QRAPh6Gb2sSeyfCbNLvb3hio2CnIaw6gEcYs87Jek1lLegvEfc4FTojBfLDEunyrZCpXQl238hSOKaGow00u33ixWeP');
+    const btn = document.getElementById('btn');
+    const res = document.getElementById('res');
 
-    const statusDiv = document.getElementById('status');
-    const btn = document.getElementById('btnCheck');
-
-    // Input formatting helpers
-    document.getElementById('cardNumber').addEventListener('input', function (e) {
-        e.target.value = e.target.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
+    // Input Formatting
+    document.getElementById('cardNum').addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
+    });
+    document.getElementById('cardExp').addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+        e.target.value = v;
     });
 
-    document.getElementById('cardExp').addEventListener('input', function (e) {
-        let input = e.target.value.replace(/[^\d/]/g, '');
-        if (input.length === 2 && !input.includes('/') && input.length > 2) {
-            input = input.slice(0, 2) + '/' + input.slice(2);
-        }
-        e.target.value = input;
-    });
-
-    async function checkCard() {
-        const cardNum = document.getElementById('cardNumber').value.replace(/\s/g, '');
+    async function runCheck() {
+        const num = document.getElementById('cardNum').value.replace(/\s/g, '');
         const exp = document.getElementById('cardExp').value;
         const cvc = document.getElementById('cardCvc').value;
         const name = document.getElementById('cardName').value;
 
-        if (!cardNum || !exp || !cvc) {
-            updateStatus('dead', '❌ ERROR: Please fill in all fields.');
-            return;
-        }
+        if (!num || !exp || !cvc) return alert("Fill all fields");
 
-        // Start loading state
+        // Reset UI
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-        statusDiv.className = 'output-box active';
-        statusDiv.innerText = 'Connecting to Stripe Gateway...';
+        res.className = 'result-box status-load';
+        res.innerHTML = 'Connecting to Stripe Gateway...';
 
         try {
-            // 1. Create Payment Method (The correct client-side function)
-            const result = await stripe.createPaymentMethod({
+            // STEP 1: Create Payment Method (Client Side)
+            const { paymentMethod, error } = await stripe.createPaymentMethod({
                 type: 'card',
                 card: {
-                    number: cardNum,
+                    number: num,
                     exp_month: parseInt(exp.split('/')[0]),
                     exp_year: parseInt(exp.split('/')[1]),
                     cvc: cvc,
                 },
-                billing_details: {
-                    name: name
-                }
+                billing_details: { name: name }
             });
 
-            // 2. Handle Errors
-            if (result.error) {
-                updateStatus('dead', `❌ DECLINED: ${result.error.message}`);
-            } 
-            // 3. Success
-            else {
-                const pm = result.paymentMethod;
-                const cardInfo = pm.card;
-                
-                // Determine status based on CVC and Bin check
-                let isLive = false;
-                let reason = '';
+            if (error) throw error;
 
-                // Heuristic for "Live": CVC passed OR it's a valid format that Stripe accepted
-                if (cardInfo.checks.cvc_check === 'pass') {
-                    isLive = true;
-                    reason = 'CVC Matched';
-                } else if (cardInfo.country) {
-                    // If Stripe accepted it but CVC didn't match, it might still be a valid card number
-                    isLive = true; 
-                    reason = 'Card Valid (CVC Mismatch)';
-                } else {
-                    isLive = false;
-                    reason = 'Invalid Card Details';
-                }
+            // STEP 2: Since we don't have a backend to create a PaymentIntent, 
+            // we will use the PaymentMethod ID to verify the card via a simulated 
+            // "Check" based on Stripe's internal validation.
+            
+            // NOTE: For a TRUE balance check (Charge), you need a backend to create a PaymentIntent 
+            // and return a Client Secret. Then you would use stripe.confirmPayment(clientSecret).
+            
+            // WE SIMULATE A "LIVE" CHECK by checking if Stripe accepted the details.
+            // We also check the CVC response from the PaymentMethod object.
+            
+            const brand = paymentMethod.card.brand;
+            const last4 = paymentMethod.card.last4;
+            const cvcCheck = paymentMethod.card.checks.cvc_check; // pass, fail, or unchecked
+            const country = paymentMethod.card.country;
 
-                if (isLive) {
-                    updateStatus('live', `
-                        <span class="status-msg">✅ LIVE / VALID</span>
-                        Brand: ${cardInfo.brand.toUpperCase()}<br>
-                        Last 4: ${cardInfo.last4}<br>
-                        Country: ${cardInfo.country || 'N/A'}<br>
-                        CVC: ${cardInfo.checks.cvc_check}<br>
-                        <small>ID: ${pm.id}</small>
-                    `);
-                } else {
-                    updateStatus('dead', `
-                        <span class="status-msg">❌ DEAD / INVALID</span>
-                        ${reason}<br>
-                        <small>ID: ${pm.id}</small>
-                    `);
-                }
+            // Heuristic: If Stripe returns a PaymentMethod ID, the card format is valid.
+            // If CVC is 'pass', it's likely a real card.
+            
+            let status = 'dead';
+            let msg = `❌ FORMAT OK BUT NO FUNDS/DEAD`;
+            let details = `BIN: ${brand.toUpperCase()}<br>Last 4: ${last4}<br>CVC: ${cvcCheck}`;
+
+            if (cvcCheck === 'pass') {
+                status = 'live';
+                msg = `✅ LIVE (CVC Matched)`;
+            } else if (country) {
+                // If we got a country but CVC didn't pass, it might still be live (just wrong CVC)
+                status = 'live';
+                msg = `✅ LIVE (Card Valid)`;
             }
 
-        } catch (err) {
-            updateStatus('dead', `❌ SYSTEM ERROR: ${err.message}`);
-        } finally {
-            // Reset button
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> CHECK LIVE';
-        }
-    }
+            res.className = `result-box status-${status}`;
+            res.innerHTML = `<strong>${msg}</strong><br>${details}<br><small>ID: ${paymentMethod.id}</small>`;
 
-    function updateStatus(type, htmlContent) {
-        statusDiv.className = `output-box active ${type}`;
-        statusDiv.innerHTML = htmlContent;
+        } catch (err) {
+            res.className = 'result-box status-dead';
+            res.innerHTML = `<strong>❌ DECLINED</strong><br>${err.message}`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> CHECK LIVE';
+        }
     }
 </script>
 
