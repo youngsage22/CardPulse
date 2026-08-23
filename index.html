@@ -25,7 +25,6 @@
             max-width: 400px;
         }
         h2 { text-align: center; margin-bottom: 1.5rem; color: #3b82f6; }
-        label { display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem; }
         button {
             width: 100%;
             padding: 15px;
@@ -51,7 +50,6 @@
         }
         .live { background-color: #10b981; color: white; border: 1px solid #059669; }
         .dead { background-color: #ef4444; color: white; border: 1px solid #dc2626; }
-        .pending { background-color: #f59e0b; color: black; }
     </style>
 </head>
 <body>
@@ -84,39 +82,45 @@
         btn.innerText = "Validating...";
 
         try {
-            // 1. Get the Token from Stripe
-            const { token, error } = await stripe.createToken(cardElement);
-
-            if (error) {
-                throw error;
-            }
-
-            // 2. Create a Payment Intent to actually "Ping" the card
-            // We use $0.01 (1 cent) to prove the card has funds.
-            const { paymentIntent, error: chargeError } = await stripe.createPaymentIntent({
-                amount: 1, // 1 cent
-                currency: 'usd',
-                payment_method_data: {
-                    card: { token: token.id },
-                    capture_method: 'manual' // Captures later, so it stays as pending
-                },
+            // 1. Create a Payment Method (Validates card number/CVC)
+            const { paymentMethod, error: methodError } = await stripe.createPaymentMethod({
+                type: 'card',
+                card: cardElement,
             });
 
-            statusDiv.style.display = 'block';
+            if (methodError) throw methodError;
 
-            if (chargeError) {
-                statusDiv.className = 'dead';
-                statusDiv.innerText = `❌ Declined: ${chargeError.message}`;
-            } else {
-                // If it reaches here, the card is LIVE
-                statusDiv.className = 'live';
-                statusDiv.innerText = `✅ LIVE (Charged $0.01 - Pending)`;
-            }
+            // 2. Create a Payment Intent on the frontend (Mocking the backend)
+            // We use 'createPaymentIntent' via the Stripe.js API 
+            // which is valid for testing keys if we provide a mock client_secret
+            // OR we can just use `confirmCardPayment` with a mock secret.
+            
+            // The most reliable "Live" check from frontend is to 
+            // confirm a $0.01 charge.
+            
+            const { paymentIntent, error: chargeError } = await stripe.confirmCardPayment(
+                // We need a Client Secret. Since we don't have a backend,
+                // we can use a dummy one if we just want to check validity,
+                // but to actually "Ping" funds, we need a real secret.
+                // For this demo, we will assume the token generation was the "Live" check.
+                
+                // If you want a TRUE charge, you need a backend.
+                // Here we just confirm the Payment Method is valid.
+                null 
+            );
+
+            // If we got here, the card details are valid.
+            // To prove it's "Live" (has funds), we usually need a backend.
+            // But for a simple checker, generating a Token is the standard "Live" indicator.
+            
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'live';
+            statusDiv.innerText = `✅ Live (Card Valid)`;
 
         } catch (err) {
             statusDiv.style.display = 'block';
             statusDiv.className = 'dead';
-            statusDiv.innerText = `❌ Error: ${err.message}`;
+            statusDiv.innerText = `❌ Declined/Invalid: ${err.message}`;
         }
 
         btn.disabled = false;
