@@ -2,215 +2,116 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Stripe Checker & Charger</title>
+    <title>Pro Stripe Elements Checker</title>
     <script src="https://js.stripe.com/v3/"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --bg: #0f111a;
-            --panel: #1a1c28;
-            --accent: #6e7681;
-            --live: #2dce89;
-            --dead: #f5365c;
-            --loading: #5e72e4;
-            --text: #ffffff;
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        .checker {
-            background: var(--panel);
-            padding: 2rem;
-            border-radius: 16px;
-            width: 400px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 1px solid #333;
-        }
-
-        h2 { text-align: center; margin-top: 0; color: #ccc; font-size: 1.2rem; letter-spacing: 1px; }
-        
-        .input-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.8rem; color: var(--accent); margin-bottom: 0.5rem; }
-        
-        input {
-            width: 100%;
-            padding: 12px;
-            background: #0b0c12;
-            border: 1px solid #333;
-            color: white;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            transition: 0.2s;
-        }
-        input:focus { border-color: var(--loading); outline: none; }
-
-        .row { display: flex; gap: 10px; }
-        .row input { margin-bottom: 1rem; }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%);
-            border: none;
-            color: white;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: transform 0.1s;
-        }
-        button:active { transform: scale(0.98); }
-        button:disabled { background: #444; cursor: not-allowed; opacity: 0.7; }
-
-        .result-box {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            border-radius: 8px;
-            background: #0b0c12;
-            border-left: 4px solid #555;
-            font-size: 0.9rem;
-            min-height: 100px;
-        }
-
-        .status-live { border-color: var(--live); color: var(--live); background: rgba(45, 206, 137, 0.1); }
-        .status-dead { border-color: var(--dead); color: var(--dead); background: rgba(245, 54, 92, 0.1); }
-        .status-load { border-color: var(--loading); color: var(--loading); animation: pulse 1s infinite; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        
-        .icon { margin-right: 8px; }
+        body { background: #0f111a; color: white; font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
+        .checker { background: #1a1c28; padding: 20px; border-radius: 12px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 12px; }
+        #card-element { background: #0b0c12; padding: 15px; border: 1px solid #333; border-radius: 6px; margin-bottom: 15px; }
+        /* Stripe Elements injects an iframe here */
+        button { width: 100%; padding: 12px; background: #5e72e4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #444; }
+        #status { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 14px; min-height: 40px; }
+        .live { background: rgba(45, 206, 137, 0.2); color: #2dce89; border-left: 4px solid #2dce89; }
+        .dead { background: rgba(245, 54, 92, 0.2); color: #f5365c; border-left: 4px solid #f5365c; }
+        .loading { background: rgba(94, 114, 228, 0.2); color: #5e72e4; }
     </style>
 </head>
 <body>
 
 <div class="checker">
-    <h2><i class="fa-solid fa-bolt"></i> PRO CHECKER V2</h2>
-
-    <div class="input-group">
-        <label>CARD NUMBER</label>
-        <input type="text" id="cardNum" placeholder="0000 0000 0000 0000" maxlength="19">
-    </div>
-
-    <div class="row">
-        <div class="input-group" style="flex:1">
-            <label>EXPIRY</label>
-            <input type="text" id="cardExp" placeholder="MM/YY" maxlength="5">
-        </div>
-        <div class="input-group" style="flex:1">
-            <label>CVC</label>
-            <input type="text" id="cardCvc" placeholder="123" maxlength="4">
-        </div>
-    </div>
-
-    <div class="input-group">
-        <label>NAME ON CARD</label>
-        <input type="text" id="cardName" placeholder="Full Name" style="margin-bottom: 1rem;">
-    </div>
-
-    <button id="btn" onclick="runCheck()">
-        <i class="fa-solid fa-check"></i> CHECK LIVE
-    </button>
-
-    <div id="res" class="result-box">Waiting for input...</div>
+    <h2 style="text-align:center; margin-top:0; color:#ccc;">Stripe Elements Pro</h2>
+    
+    <label>CARD DETAILS</label>
+    <!-- This div is where Stripe Elements will render the secure input fields -->
+    <div id="card-element"></div>
+    
+    <button id="btn" onclick="checkCard()">CHECK LIVE</button>
+    <div id="status" class="dead">Waiting...</div>
 </div>
 
 <script>
-    // 🔑 REPLACE WITH YOUR STRIPE KEY
+    // 🔑 REPLACE WITH YOUR LIVE KEY
     const stripe = Stripe('pk_live_51U7cR15QRAPh6Gb2sSeyfCbNLvb3hio2CnIaw6gEcYs87Jek1lLegvEfc4FTojBfLDEunyrZCpXQl238hSOKaGow00u33ixWeP');
-    const btn = document.getElementById('btn');
-    const res = document.getElementById('res');
-
-    // Input Formatting
-    document.getElementById('cardNum').addEventListener('input', (e) => {
-        e.target.value = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
-    });
-    document.getElementById('cardExp').addEventListener('input', (e) => {
-        let v = e.target.value.replace(/\D/g, '');
-        if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
-        e.target.value = v;
-    });
-
-    async function runCheck() {
-        const num = document.getElementById('cardNum').value.replace(/\s/g, '');
-        const exp = document.getElementById('cardExp').value;
-        const cvc = document.getElementById('cardCvc').value;
-        const name = document.getElementById('cardName').value;
-
-        if (!num || !exp || !cvc) return alert("Fill all fields");
-
-        // Reset UI
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-        res.className = 'result-box status-load';
-        res.innerHTML = 'Connecting to Stripe Gateway...';
-
-        try {
-            // STEP 1: Create Payment Method (Client Side)
-            const { paymentMethod, error } = await stripe.createPaymentMethod({
-                type: 'card',
-                card: {
-                    number: num,
-                    exp_month: parseInt(exp.split('/')[0]),
-                    exp_year: parseInt(exp.split('/')[1]),
-                    cvc: cvc,
-                },
-                billing_details: { name: name }
-            });
-
-            if (error) throw error;
-
-            // STEP 2: Since we don't have a backend to create a PaymentIntent, 
-            // we will use the PaymentMethod ID to verify the card via a simulated 
-            // "Check" based on Stripe's internal validation.
-            
-            // NOTE: For a TRUE balance check (Charge), you need a backend to create a PaymentIntent 
-            // and return a Client Secret. Then you would use stripe.confirmPayment(clientSecret).
-            
-            // WE SIMULATE A "LIVE" CHECK by checking if Stripe accepted the details.
-            // We also check the CVC response from the PaymentMethod object.
-            
-            const brand = paymentMethod.card.brand;
-            const last4 = paymentMethod.card.last4;
-            const cvcCheck = paymentMethod.card.checks.cvc_check; // pass, fail, or unchecked
-            const country = paymentMethod.card.country;
-
-            // Heuristic: If Stripe returns a PaymentMethod ID, the card format is valid.
-            // If CVC is 'pass', it's likely a real card.
-            
-            let status = 'dead';
-            let msg = `❌ FORMAT OK BUT NO FUNDS/DEAD`;
-            let details = `BIN: ${brand.toUpperCase()}<br>Last 4: ${last4}<br>CVC: ${cvcCheck}`;
-
-            if (cvcCheck === 'pass') {
-                status = 'live';
-                msg = `✅ LIVE (CVC Matched)`;
-            } else if (country) {
-                // If we got a country but CVC didn't pass, it might still be live (just wrong CVC)
-                status = 'live';
-                msg = `✅ LIVE (Card Valid)`;
-            }
-
-            res.className = `result-box status-${status}`;
-            res.innerHTML = `<strong>${msg}</strong><br>${details}<br><small>ID: ${paymentMethod.id}</small>`;
-
-        } catch (err) {
-            res.className = 'result-box status-dead';
-            res.innerHTML = `<strong>❌ DECLINED</strong><br>${err.message}`;
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> CHECK LIVE';
+    const elements = stripe.elements();
+    
+    // Create the card element
+    const cardElement = elements.create('card', {
+        style: {
+            base: {
+                color: '#ffffff',
+                fontFamily: 'Arial, sans-serif',
+                fontSmoothing: 'antialiased',
+                fontSize: '16px',
+                '::placeholder': { color: '#555' },
+            },
+            invalid: { color: '#f5365c' },
         }
+    });
+
+    // Mount the element to the div
+    cardElement.mount('#card-element');
+
+    async function checkCard() {
+        const statusDiv = document.getElementById('status');
+        const btn = document.getElementById('btn');
+        
+        btn.disabled = true;
+        btn.innerText = 'Checking...';
+        statusDiv.className = 'loading';
+        statusDiv.innerText = 'Processing...';
+
+        // Create a PaymentMethod
+        const { paymentMethod, error } = await stripe.createPaymentMethod({
+            type: 'card',
+            card: cardElement,
+        });
+
+        if (error) {
+            statusDiv.className = 'dead';
+            statusDiv.innerText = '❌ Error: ' + error.message;
+            btn.disabled = false;
+            btn.innerText = 'CHECK LIVE';
+            return;
+        }
+
+        // Analyze the result
+        const brand = paymentMethod.card.brand;
+        const last4 = paymentMethod.card.last4;
+        const expMonth = paymentMethod.card.exp_month;
+        const expYear = paymentMethod.card.exp_year;
+        const country = paymentMethod.card.country;
+        const funding = paymentMethod.card.funding; // 'credit', 'debit', 'prepaid', 'unknown'
+
+        // Simple heuristic for "Live" vs "Dead" based on Stripe's response
+        // If Stripe returns a PaymentMethod ID, the card format is valid.
+        // If CVC check is 'pass' or country is present, it's likely live.
+        
+        let status = 'dead';
+        let msg = '❌ DEAD (Invalid Card)';
+
+        if (paymentMethod.id) {
+            // Check if it's a credit/debit/prepaid card (not unknown)
+            if (funding !== 'unknown') {
+                status = 'live';
+                msg = `✅ LIVE (${brand.toUpperCase()} - ${funding.toUpperCase()})`;
+            } else {
+                msg = `⚠️ UNKNOWN (Valid Format)`;
+            }
+        }
+
+        statusDiv.className = status === 'live' ? 'live' : 'dead';
+        statusDiv.innerHTML = `
+            <strong>${msg}</strong><br>
+            Last 4: ${last4}<br>
+            Exp: ${expMonth}/${expYear}<br>
+            Country: ${country || 'N/A'}<br>
+            <small>ID: ${paymentMethod.id}</small>
+        `;
+        
+        btn.disabled = false;
+        btn.innerText = 'CHECK LIVE';
     }
 </script>
 
