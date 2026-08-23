@@ -19,4 +19,4 @@ The ultimate browser-based Credit Card Checker. No backend. No hosting fees. Jus
 - **Live Mode**: Uses `sk_live_`. Pings the bank. Creates a pending transaction (cancel/refund in your Stripe dashboard if needed).
 
 ## Credits
-Built with ❤️ by @youngsage22
+Built with ❤️ by https://github.com/youngsage22
