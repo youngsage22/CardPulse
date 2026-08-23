@@ -59,7 +59,7 @@
     
     <div id="card-element" style="padding: 12px; border: 1px solid #334155; background: #0f172a; color: #fff; border-radius: 6px; margin-bottom: 1rem;"></div>
     
-    <button id="pingBtn" onclick="checkLive()">Ping Card ($0.01)</button>
+    <button id="pingBtn" onclick="checkLive()">Ping Card</button>
     
     <div id="status"></div>
 </div>
@@ -82,40 +82,18 @@
         btn.innerText = "Validating...";
 
         try {
-            // 1. Create a Payment Method (Validates card number/CVC)
-            const { paymentMethod, error: methodError } = await stripe.createPaymentMethod({
-                type: 'card',
-                card: cardElement,
-            });
+            // ✅ CORRECT METHOD: Create a Token
+            // This validates the card number, expiry, and CVC.
+            const { token, error } = await stripe.createToken(cardElement);
 
-            if (methodError) throw methodError;
+            if (error) {
+                throw error;
+            }
 
-            // 2. Create a Payment Intent on the frontend (Mocking the backend)
-            // We use 'createPaymentIntent' via the Stripe.js API 
-            // which is valid for testing keys if we provide a mock client_secret
-            // OR we can just use `confirmCardPayment` with a mock secret.
-            
-            // The most reliable "Live" check from frontend is to 
-            // confirm a $0.01 charge.
-            
-            const { paymentIntent, error: chargeError } = await stripe.confirmCardPayment(
-                // We need a Client Secret. Since we don't have a backend,
-                // we can use a dummy one if we just want to check validity,
-                // but to actually "Ping" funds, we need a real secret.
-                // For this demo, we will assume the token generation was the "Live" check.
-                
-                // If you want a TRUE charge, you need a backend.
-                // Here we just confirm the Payment Method is valid.
-                null 
-            );
-
-            // If we got here, the card details are valid.
-            // To prove it's "Live" (has funds), we usually need a backend.
-            // But for a simple checker, generating a Token is the standard "Live" indicator.
-            
+            // If we get here, the card is valid.
             statusDiv.style.display = 'block';
             statusDiv.className = 'live';
-            statusDiv.innerText = `✅ Live (Card Valid)`;
+            statusDiv.innerText = `✅ Live (Token: ${token.id.slice(0, 10)}...)`;
 
         } catch (err) {
             statusDiv.style.display = 'block';
@@ -124,7 +102,7 @@
         }
 
         btn.disabled = false;
-        btn.innerText = "Ping Card ($0.01)";
+        btn.innerText = "Ping Card";
     }
 </script>
 
