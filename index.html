@@ -80,8 +80,7 @@
 
 <script>
     // ⚠️ REPLACE WITH YOUR STRIPE PUBLISHABLE KEY
-    const stripe = Stripe('pk_live_51Sk4E0IiQSeK0nqiVQDmWYswGFRj4ZqGjX3UImbFcPpdGl3bdCObwI1iEXfzGmKIH7wMc2KPIFAX4fSvjxhlB9Xl00GU2RxAqt
-');
+    const stripe = Stripe('pk_test_51U7cR15QRAPh6Gb2aaHJLny4UGoIQjUqmOSTxQAnisN4Ms3FRdkBtSVeKaIuFUN8C2ijNdrPa6YKgFuHfOFjp4xL000rKID5gY');
     const elements = stripe.elements();
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
