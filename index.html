@@ -51,7 +51,6 @@
         }
         .live { background-color: #10b981; color: white; border: 1px solid #059669; }
         .dead { background-color: #ef4444; color: white; border: 1px solid #dc2626; }
-        .info { background-color: #3b82f6; color: white; border: 1px solid #2563eb; }
     </style>
 </head>
 <body>
@@ -89,7 +88,7 @@
                 confirmParams: {
                     return_url: window.location.href,
                 },
-                redirect: 'if_required', // Keeps you on the page
+                redirect: 'if_required', 
             });
 
             if (error) {
