@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Card Ping</title>
+    <title>Pro Card Checker</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         body {
@@ -24,68 +24,56 @@
             width: 100%;
             max-width: 400px;
         }
-        h2 { text-align: center; margin-bottom: 1.5rem; }
+        h2 { text-align: center; margin-bottom: 1.5rem; color: #3b82f6; }
         label { display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem; }
-        
-        /* Stripe Element Styling */
-        .stripe-input {
-            padding: 12px;
-            margin-bottom: 1rem;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: #fff;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
-        
         button {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             background-color: #3b82f6;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: bold;
+            transition: 0.2s;
         }
         button:hover { background-color: #2563eb; }
         button:disabled { background-color: #64748b; cursor: not-allowed; }
-        
         #status {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             padding: 1rem;
             text-align: center;
             border-radius: 6px;
             display: none;
             font-weight: bold;
+            font-size: 0.95rem;
         }
-        .live { background-color: #10b981; color: white; }
-        .dead { background-color: #ef4444; color: white; }
+        .live { background-color: #10b981; color: white; border: 1px solid #059669; }
+        .dead { background-color: #ef4444; color: white; border: 1px solid #dc2626; }
+        .pending { background-color: #f59e0b; color: black; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Pro Card Ping 🚀</h2>
+    <h2>💳 Pro Checker</h2>
     
-    <!-- These IDs must match the JS below -->
-    <div id="card-element" class="stripe-input"></div>
+    <div id="card-element" style="padding: 12px; border: 1px solid #334155; background: #0f172a; color: #fff; border-radius: 6px; margin-bottom: 1rem;"></div>
     
-    <button id="pingBtn" onclick="pingCard()">Ping Card</button>
+    <button id="pingBtn" onclick="checkLive()">Ping Card ($0.01)</button>
     
     <div id="status"></div>
 </div>
 
 <script>
-    // ⚠️ REPLACE WITH YOUR STRIPE PUBLISHABLE KEY
+    // 🔑 YOUR PUBLISHABLE KEY
     const stripe = Stripe('pk_test_51U7cR15QRAPh6Gb2aaHJLny4UGoIQjUqmOSTxQAnisN4Ms3FRdkBtSVeKaIuFUN8C2ijNdrPa6YKgFuHfOFjp4xL000rKID5gY');
     const elements = stripe.elements();
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
 
-    async function pingCard() {
+    async function checkLive() {
         const statusDiv = document.getElementById('status');
         const btn = document.getElementById('pingBtn');
 
@@ -93,87 +81,46 @@
         statusDiv.style.display = 'none';
         statusDiv.className = '';
         btn.disabled = true;
-        btn.innerText = "Pinging...";
+        btn.innerText = "Validating...";
 
         try {
-            // This creates a token and validates the card instantly
+            // 1. Get the Token from Stripe
             const { token, error } = await stripe.createToken(cardElement);
 
             if (error) {
                 throw error;
             }
 
-            // If we reach here, the card is valid. 
-            // We don't actually charge it, we just "ping" it.
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'live';
-            statusDiv.innerText = `✅ try {
-        // 1. Create the token
-        const { token, error } = await stripe.createToken(cardElement);
-        if (error) throw error;
-
-        // 2. Create a PaymentIntent to actually charge $1.00
-        const { paymentIntent, error: chargeError } = await stripe.createPaymentIntent({
-            amount: 100, // $1.00
-            currency: 'usd',
-            payment_method_data: {
-                card: {
-                    token: token.id,
+            // 2. Create a Payment Intent to actually "Ping" the card
+            // We use $0.01 (1 cent) to prove the card has funds.
+            const { paymentIntent, error: chargeError } = await stripe.createPaymentIntent({
+                amount: 1, // 1 cent
+                currency: 'usd',
+                payment_method_data: {
+                    card: { token: token.id },
+                    capture_method: 'manual' // Captures later, so it stays as pending
                 },
-                capture_method: 'manual',
-            },
-        });
+            });
 
-        statusDiv.style.display = 'block';
-        
-        if (chargeError) {
-            statusDiv.className = 'dead';
-            statusDiv.innerText = `❌ Declined: ${chargeError.message}`;
-        } else {
-            statusDiv.className = 'live';
-            statusDiv.innerText = `✅ LIVE (Charged $1.00 - Pending)`;
-        }
+            statusDiv.style.display = 'block';
 
-    } catch (err) {
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'dead';
-        statusDiv.innerText = `❌ Error: ${err.message}`;
-    }
-    btn.disabled = false;
-    btn.innerText = "Ping Card";
-} (Token: ${token.id})`;
-            btn.disabled = false;
-            btn.innerText = "async function pingCard() {
-    const statusDiv = document.getElementById('status');
-    const btn = document.getElementById('pingBtn');
-
-    // Reset UI
-    statusDiv.style.display = 'none';
-    statusDiv.className = '';
-    btn.disabled = true;
-    btn.innerText = "Pinging...";
-
-    try {
-        // 1. Create a PaymentMethod
-        const { paymentMethod, error } = await stripe.createPaymentMethod({
-            type: 'card',
-            card: {
-                number,
-                exp_month: parseInt(exp.split('/')[0]),
-                exp_year: parseInt(exp.split('/')[1]),
-                cvc
+            if (chargeError) {
+                statusDiv.className = 'dead';
+                statusDiv.innerText = `❌ Declined: ${chargeError.message}`;
+            } else {
+                // If it reaches here, the card is LIVE
+                statusDiv.className = 'live';
+                statusDiv.innerText = `✅ LIVE (Charged $0.01 - Pending)`;
             }
-        });
-        
-        // ... (rest of your old code)";
 
         } catch (err) {
             statusDiv.style.display = 'block';
             statusDiv.className = 'dead';
-            statusDiv.innerText = `❌ Declined: ${err.message}`;
-            btn.disabled = false;
-            btn.innerText = "Ping Card";
+            statusDiv.innerText = `❌ Error: ${err.message}`;
         }
+
+        btn.disabled = false;
+        btn.innerText = "Ping Card ($0.01)";
     }
 </script>
 
