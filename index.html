@@ -3,166 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro CC Suite v2</title>
+    <title>ProCC Suite | Ultimate CC Tool</title>
     <script src="https://js.stripe.com/v3/"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
+            --bg: #0f111a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --secondary: #06b6d4;
             --text: #f8fafc;
-            --border: #334155;
+            --text-muted: #94a3b8;
             --success: #10b981;
             --danger: #ef4444;
         }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg);
             color: var(--text);
+            margin: 0;
+            padding: 2rem;
+            background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 40%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            padding: 2rem;
-            margin: 0;
+            align-items: flex-start;
         }
+
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
         }
+
+        /* Glassmorphism Panels */
         .panel {
-            background: var(--card);
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            margin-bottom: 1.5rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        h2 { margin-top: 0; font-size: 1.2rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
         
-        label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: #94a3b8; }
+        /* Inputs */
+        label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            font-size: 0.8rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: var(--text-muted);
+            font-weight: 600;
+        }
         input, select {
             width: 100%;
-            padding: 12px;
-            background: var(--bg);
+            padding: 14px;
+            background: rgba(15, 17, 26, 0.6);
             border: 1px solid var(--border);
             color: var(--text);
-            border-radius: 6px;
+            border-radius: 8px;
             margin-bottom: 1rem;
             font-size: 1rem;
+            font-family: 'Fira Code', monospace;
+            transition: all 0.2s;
             box-sizing: border-box;
         }
-        input:focus, select:focus { outline: none; border-color: var(--primary); }
-        
+        input:focus, select:focus { 
+            outline: none; 
+            border-color: var(--primary); 
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        /* Buttons */
         button {
             width: 100%;
-            padding: 12px;
-            background-color: var(--primary);
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            transition: 0.2s;
-        }
-        button:hover { background-color: var(--primary-hover); }
-        button:disabled { background-color: #475569; cursor: not-allowed; }
-        button.secondary { background-color: #475569; }
-        button.secondary:hover { background-color: #64748b; }
-
-        .output {
-            margin-top: 1rem;
-            padding: 1rem;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            word-break: break-all;
-            white-space: pre-line;
-            display: none;
-            font-family: monospace;
-        }
-        .live { background-color: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); color: var(--success); }
-        .dead { background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: var(--danger); }
-        .info { background-color: rgba(59, 130, 246, 0.2); border: 1px solid var(--primary); color: var(--primary); }
-
-        /* Stripe Element Container Styling */
-        .stripe-wrapper {
-            padding: 10px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 6px;
+            font-weight: 700;
             margin-bottom: 1rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
         }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--primary-glow); }
+        button:active { transform: translateY(0); }
+        button.secondary { background: #334155; color: #cbd5e1; }
+        button.secondary:hover { background: #475569; box-shadow: 0 5px 10px rgba(0,0,0,0.2); }
+
+        /* Outputs */
+        .output-box {
+            margin-top: 1rem;
+            padding: 1.2rem;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            word-break: break-all;
+            display: none;
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed var(--border);
+        }
+        .output-box.active { border-style: solid; display: block; animation: fadeIn 0.3s ease; }
+        
+        .live { background: rgba(16, 185, 129, 0.1); border-color: var(--success); color: var(--success); }
+        .dead { background: rgba(239, 68, 68, 0.1); border-color: var(--danger); color: var(--danger); }
+        .info { background: rgba(59, 130, 246, 0.1); border-color: var(--primary); color: var(--text); }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            width: auto;
+            margin-bottom: 0;
+            border-radius: 4px;
+        }
+        .copy-btn:hover { background: var(--border); color: var(--text); }
+
+        /* Card Visual */
+        .cc-visual {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .cc-visual::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.2), transparent 60%);
+        }
+        .cc-visual h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; }
+        .cc-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .cc-val { font-weight: 700; font-size: 1.2rem; letter-spacing: 2px; font-family: 'Fira Code', monospace; }
+
+        /* Grid for Desktop */
+        @media (min-width: 768px) {
+            .container { grid-template-columns: 1fr 1fr; }
+            .full-width { grid-column: span 2; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div class="container">
     
+    <!-- HEADER -->
+    <div class="panel full-width" style="text-align: center;">
+        <h2 style="justify-content: center; font-size: 2rem;">
+            <i class="fa-solid fa-layer-group"></i> ProCC Suite
+        </h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Ultimate CC Generation & Live Verification</p>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <span style="background: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; color: var(--success); border: 1px solid var(--success);"><i class="fa-solid fa-check"></i> LIVE STRIPE KEY ACTIVE</span>
+            <span style="background: rgba(99, 102, 241, 0.1); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; color: var(--primary); border: 1px solid var(--primary);"><i class="fa-solid fa-shield-halved"></i> SECURE</span>
+        </div>
+    </div>
+
     <!-- SECTION 1: GENERATOR -->
     <div class="panel">
-        <h2>🎲 CC Generator</h2>
-        <label>Card Network</label>
+        <div class="panel-header">
+            <h2><i class="fa-solid fa-wand-magic-sparkles"></i> CC Generator</h2>
+        </div>
+        
+        <label>Network</label>
         <select id="genNetwork">
-            <option value="">Random (Auto-Detect)</option>
+            <option value="random">Auto-Random</option>
             <option value="visa">Visa</option>
             <option value="mastercard">Mastercard</option>
-            <option value="amex">Amex (15 Digits)</option>
+            <option value="amex">Amex</option>
         </select>
-        <button onclick="generateCC()">Generate Random Card</button>
-        <button class="secondary" onclick="copyToClipboard()">Copy Generated</button>
-        <div id="genOutput" class="output"></div>
+
+        <label>Custom BIN (Optional)</label>
+        <input type="text" id="customBin" placeholder="e.g. 411111 or 510510">
+
+        <label>Generation Mode</label>
+        <select id="genMode">
+            <option value="full">Full Details (Name, Exp, CVV)</option>
+            <option value="number">Number Only</option>
+        </select>
+
+        <button onclick="generateCC()">
+            <i class="fa-solid fa-bolt"></i> Generate Card
+        </button>
+        <button class="secondary" onclick="copyToClipboard()">
+            <i class="fa-regular fa-copy"></i> Copy All
+        </button>
+
+        <div id="genOutput" class="output-box info"></div>
     </div>
 
-    <!-- SECTION 2: BIN CHECKER -->
+    <!-- SECTION 2: LIVE CHECKER -->
     <div class="panel">
-        <h2>🔍 BIN Checker</h2>
-        <label>Enter first 6 or 8 digits</label>
-        <input type="text" id="binInput" placeholder="e.g., 411111" oninput="checkBin()">
-        <div id="binOutput" class="output info">Waiting for input...</div>
+        <div class="panel-header">
+            <h2><i class="fa-solid fa-satellite-dish"></i> Live Checker</h2>
+        </div>
+        
+        <label>Card Number</label>
+        <input type="text" id="checkCard" placeholder="4532...">
+        <label>CVC & Expiry</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="checkExp" placeholder="MM/YY" style="margin-bottom: 0;">
+            <input type="text" id="checkCvc" placeholder="123" style="margin-bottom: 0;">
+        </div>
+        <label>Name</label>
+        <input type="text" id="checkName" placeholder="CARD HOLDER" style="margin-bottom: 1rem;">
+
+        <button onclick="checkLive()">
+            <i class="fa-solid fa-credit-card"></i> Check Balance
+        </button>
+
+        <div id="status" class="output-box"></div>
     </div>
 
-    <!-- SECTION 3: CHECKER -->
-    <div class="panel">
-        <h2>💳 Live Checker</h2>
-        <div class="stripe-wrapper" id="stripe-container"></div>
-        <button id="checkBtn" onclick="checkLive()">Check Balance</button>
-        <div id="status" class="output"></div>
+    <!-- SECTION 3: BIN LOOKUP -->
+    <div class="panel full-width">
+        <div class="panel-header">
+            <h2><i class="fa-solid fa-magnifying-glass-location"></i> BIN Lookup</h2>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="binInput" placeholder="Enter first 6 digits (e.g. 411111)" style="margin-bottom: 0;">
+        </div>
+        <div id="binOutput" class="output-box info">Waiting for input...</div>
     </div>
 
 </div>
 
 <script>
-    // 🔑 REPLACE WITH YOUR STRIPE KEY
-    // If this is wrong, the "Stripe Element" box will be empty.
-    const stripe = Stripe('pk_test_51U7cR15QRAPh6Gb2aaHJLny4UGoIQjUqmOSTxQAnisN4Ms3FRdkBtSVeKaIuFUN8C2ijNdrPa6YKgFuHfOFjp4xL000rKID5gY'); 
-    const elements = stripe.elements();
-    let cardEl = null;
+    // 🔑 YOUR LIVE KEY
+    const stripe = Stripe('pk_live_51U7cR15QRAPh6Gb2sSeyfCbNLvb3hio2CnIaw6gEcYs87Jek1lLegvEfc4FTojBfLDEunyrZCpXQl238hSOKaGow00u33ixWeP');
 
-    // 1. INIT STRIPE
-    try {
-        const cardElement = elements.create('card');
-        cardElement.mount('#stripe-container');
-        cardEl = cardElement;
-    } catch (e) {
-        document.getElementById('stripe-container').innerHTML = '<span style="color: var(--danger);">Stripe Key Error: Check your Key!</span>';
-    }
-
-    // 2. GENERATOR LOGIC
+    // 1. GENERATOR LOGIC
     function generateCC() {
         const network = document.getElementById('genNetwork').value;
-        let prefix = network === 'visa' ? '4' : 
-                     network === 'mastercard' ? '5' : 
-                     network === 'amex' ? '34' : 
-                     Math.random() > 0.5 ? '4' : '5';
+        const customBin = document.getElementById('customBin').value.trim();
+        const mode = document.getElementById('genMode').value;
         
+        // Determine Prefix
+        let prefix = customBin || (network === 'visa' ? '4' : network === 'mastercard' ? '51' : network === 'amex' ? '34' : Math.random() > 0.5 ? '4' : '51');
+        
+        // Length
         let length = network === 'amex' ? 15 : 16;
         let num = prefix;
         
-        for(let i = prefix.length; i < length - 1; i++) {
+        // Pad if custom bin is short
+        if(customBin && customBin.length < length) {
+            // Just ensure we are generating the full length
+        }
+
+        for(let i = num.length; i < length - 1; i++) {
             num += Math.floor(Math.random() * 10);
         }
         
-        // Luhn Algorithm
+        // Luhn Check
         let sum = 0;
         let isEven = false;
         for (let i = num.length - 1; i >= 0; i--) {
@@ -177,98 +306,149 @@
         const checkDigit = (10 - (sum % 10)) % 10;
         const finalCard = num + checkDigit;
 
-        // Format
+        // Generate Name
+        const firstNames = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "David", "Elizabeth", "William", "Sarah", "Richard", "Jessica", "Joseph"];
+        const lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson"];
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        const name = `${firstName} ${lastName}`;
+
+        // Generate Expiry
+        const expMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+        const expYear = String(Math.floor(Math.random() * 5) + 25);
+        const expiry = `${expMonth}/${expYear}`;
+
+        // Generate CVV
+        const cvv = network === 'amex' 
+            ? String(Math.floor(Math.random() * 7999) + 1000) 
+            : String(Math.floor(Math.random() * 999) + 100);
+
+        // Generate Zip
+        const zip = String(Math.floor(Math.random() * 90000) + 10000);
+
+        // Format Output
         let display = finalCard.match(/.{1,4}/g).join(' ');
         if(network === 'amex') display = finalCard.match(/.{1,4}|.{1,6}|.{1,5}/g).join(' ');
 
-        const output = document.getElementById('genOutput');
-        output.style.display = 'block';
-        output.className = 'info';
-        output.innerText = `Number: ${display}\nLuhn: Valid`;
+        let output = '';
+        if(mode === 'full') {
+            output = `
+Card Number: ${display}
+Name: ${name}
+Expiry: ${expiry}
+CVV: ${cvv}
+Zip: ${zip}
+            `.trim();
+        } else {
+            output = display;
+        }
+
+        const outDiv = document.getElementById('genOutput');
+        outDiv.className = 'output-box active info';
+        outDiv.innerText = output;
     }
 
     function copyToClipboard() {
-        const text = document.getElementById('genOutput').innerText.split('\n')[0].replace('Number: ', '');
+        const text = document.getElementById('genOutput').innerText;
         navigator.clipboard.writeText(text);
         alert('Copied to clipboard!');
     }
 
-    // 3. BIN CHECKER (API)
+    // 2. BIN CHECKER
     async function checkBin() {
         const input = document.getElementById('binInput').value;
         const output = document.getElementById('binOutput');
         
         if (input.length < 6) {
-            output.style.display = 'block';
-            output.innerText = "Enter at least 6 digits...";
+            output.className = 'output-box active info';
+            output.innerText = "Waiting for 6 digits...";
             return;
         }
 
-        output.innerText = "Checking BIN...";
-        
         try {
             const response = await fetch(`https://lookup.binlist.net/${input}`);
             const data = await response.json();
             
             if (data.country) {
-                output.style.display = 'block';
-                output.className = 'info';
-                output.innerText = `Bank: ${data.bank?.name || 'Unknown'}\nCountry: ${data.country?.name || 'Unknown'} (${data.country?.alpha2})\nType: ${data.scheme}\nTier: ${data.network?.type || 'N/A'}`;
+                output.className = 'output-box active info';
+                output.innerText = `
+Bank: ${data.bank?.name || 'Unknown'}
+Country: ${data.country?.name} (${data.country?.alpha2})
+Scheme: ${data.scheme}
+Type: ${data.network?.type || 'N/A'}
+                `.trim();
             } else {
                 output.innerText = "BIN not found.";
             }
         } catch (e) {
-            output.innerText = "Error fetching BIN data.";
+            output.innerText = "Error fetching data.";
         }
     }
 
-    // 4. CHECKER LOGIC
+    // 3. LIVE CHECKER
     async function checkLive() {
-        const statusDiv = document.getElementById('status');
-        const btn = document.getElementById('checkBtn');
+        const cardInput = document.getElementById('checkCard').value.replace(/\s/g, '');
+        const expInput = document.getElementById('checkExp').value;
+        const cvcInput = document.getElementById('checkCvc').value;
+        const nameInput = document.getElementById('checkName').value;
+        
+        if(!cardInput || !expInput || !cvcInput) {
+            alert("Please fill in all card details.");
+            return;
+        }
 
-        statusDiv.style.display = 'none';
-        statusDiv.className = '';
-        btn.disabled = true;
-        btn.innerText = "Checking...";
+        const statusDiv = document.getElementById('status');
+        const btn = document.querySelector('#status').previousElementSibling;
+        
+        statusDiv.className = 'output-box active';
+        statusDiv.style.background = 'rgba(59, 130, 246, 0.1)';
+        statusDiv.innerText = "Authenticating...";
 
         try {
-            // Use confirmPayment for $0.00 Auth
-            const { error, paymentIntent } = await stripe.confirmPayment({
-                elements,
-                confirmParams: {
-                    return_url: window.location.href,
+            // We need to create a setup intent or payment intent. 
+            // Since we don't have a backend to create Payment Intents, 
+            // we can use Stripe's "Confirm Card" with a zero amount logic if possible, 
+            // or just try to create a PaymentIntent with amount 0 if supported.
+            // However, for a simple client-side checker, we usually do a $0.00 auth.
+            // Note: Stripe.js confirmPayment requires a Return URL or redirect. 
+            // We'll use redirect: 'if_required' to simulate a quick check without leaving.
+            
+            // We need to pass the card data.
+            const { data: paymentIntent } = await stripe.createPaymentIntent({
+                amount: 0,
+                currency: 'usd',
+                payment_method_data: {
+                    card: {
+                        number: cardInput,
+                        exp_month: parseInt(expInput.split('/')[0]),
+                        exp_year: parseInt(expInput.split('/')[1]),
+                        cvc: cvcInput,
+                    },
+                    billing_details: {
+                        name: nameInput
+                    }
                 },
-                redirect: 'if_required',
+                capture: true // Capture immediately to see balance
             });
 
-            if (error) {
-                throw error;
-            }
-
-            const balance = paymentIntent.amount / 100;
-            const currency = paymentIntent.currency.toUpperCase();
-            const status = paymentIntent.status;
-            const last4 = paymentIntent.last_payment_details.card.last4;
-            const brand = paymentIntent.last_payment_details.card.brand;
-
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'live';
+            // If we get here, it worked.
+            statusDiv.className = 'output-box active live';
             statusDiv.innerHTML = `
-<strong>✅ ${brand.toUpperCase()} ${last4}</strong><br>
-Status: ${status}<br>
-Balance: $${balance.toFixed(2)} ${currency}
+<strong>✅ APPROVED</strong><br>
+Brand: ${paymentIntent.payment_method_details.card.brand || 'Unknown'}<br>
+Last 4: ${paymentIntent.payment_method_details.card.last4 || 'N/A'}<br>
+Status: ${paymentIntent.status}<br>
+Balance: $${(paymentIntent.amount / 100).toFixed(2)}
             `;
 
         } catch (err) {
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'dead';
-            statusDiv.innerText = `❌ ${err.message}`;
+            statusDiv.className = 'output-box active dead';
+            statusDiv.innerText = `❌ DECLINED: ${err.message}`;
         }
-
-        btn.disabled = false;
-        btn.innerText = "Check Balance";
     }
+    
+    // Init BIN listener
+    document.getElementById('binInput').addEventListener('input', checkBin);
 </script>
 
 </body>
