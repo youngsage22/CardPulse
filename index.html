@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CardPulse Pro</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #3b82f6; --success: #22c55e; --fail: #ef4444; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding-top: 50px; }
+        .container { width: 400px; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h2 { text-align: center; margin-bottom: 20px; font-weight: 800; letter-spacing: -1px; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        input:focus { outline: none; border-color: var(--accent); }
+        button { background: var(--accent); border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        .toggle { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
+        #status { text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 6px; display: none; }
+        .live { background: var(--success); color: white; }
+        .dead { background: var(--fail); color: white; }
+        .hidden { display: none; }
+        .api-box { background: #0f172a; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
+        label { font-size: 11px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>CardPulse Pro</h2>
+    
+    <!-- API Key Input -->
+    <div class="api-box">
+        <label>Stripe Secret Key (sk_test_ or sk_live_)</label>
+        <input type="password" id="apiKey" placeholder="Paste your SK key here...">
+    </div>
+
+    <!-- Mode Toggle -->
+    <div class="toggle">
+        <span>Mode:</span>
+        <select id="mode" style="background: #0f172a; border: none; color: white; padding: 2px;">
+            <option value="test">Test (Sandbox)</option>
+            <option value="live">Live (Real Money)</option>
+        </select>
+    </div>
+
+    <!-- Card Details -->
+    <input type="text" id="number" placeholder="Card Number (e.g., 4242...)" maxlength="19">
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="exp" placeholder="MM/YY" maxlength="5">
+        <input type="text" id="cvc" placeholder="CVC" maxlength="4">
+    </div>
+    <input type="number" id="amount" placeholder="Amount to Ping (e.g., 100 = $1.00)" value="100">
+
+    <button onclick="checkCard()">PING CARD</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    async function checkCard() {
+        const apiKey = document.getElementById('apiKey').value;
+        const statusDiv = document.getElementById('status');
+        
+        if (!apiKey) {
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'dead';
+            statusDiv.innerHTML = '⚠️ Enter your API Key first.';
+            return;
+        }
+
+        const stripe = Stripe(apiKey);
+        const amount = parseInt(document.getElementById('amount').value) || 100;
+
+        try {
+            // We use the Stripe JS object to create a Payment Method directly
+            // This is the "Ping" that costs nothing or $0.00 depending on setup
+            
+            // 1. Create Payment Method
+            const { paymentMethod, error } = await stripe.createPaymentMethod({
+                type: 'card',
+                card: {
+                    number: document.getElementById('number').value,
+                    exp_month: parseInt(document.getElementById('exp').value.split('/')[0]),
+                    exp_year: parseInt(document.getElementById('exp').value.split('/')[1]),
+                    cvc: document.getElementById('cvc').value,
+                },
+            });
+
+            if (error) {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'dead';
+                statusDiv.innerHTML = `Dead: ${error.message}`;
+                return;
+            }
+
+            // 2. Create Payment Intent (The actual verification)
+            // We use the Fetch API to call the Stripe API directly using the Secret Key
+            const response = await fetch('https://api.stripe.com/v1/payment_intents', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    amount: amount,
+                    currency: 'usd',
+                    payment_method: paymentMethod.id,
+                    confirm: 'true',
+                    capture_method: 'manual' // Don't charge, just verify
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.paid === true || data.status === 'requires_payment_method') {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'live';
+                statusDiv.innerHTML = `✅ LIVE: ${data.last_payment_error?.message || 'Approved'}`;
+            } else {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'dead';
+                statusDiv.innerHTML = `❌ DEAD: ${data.last_payment_error?.message || 'Declined'}`;
+            }
+
+        } catch (e) {
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'dead';
+            statusDiv.innerHTML = 'Error: ' + e.message;
+        }
+    }
+</script>
+
+</body>
+</html>
