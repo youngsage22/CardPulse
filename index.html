@@ -107,9 +107,65 @@
             // We don't actually charge it, we just "ping" it.
             statusDiv.style.display = 'block';
             statusDiv.className = 'live';
-            statusDiv.innerText = `✅ Live (Token: ${token.id})`;
+            statusDiv.innerText = `✅ try {
+        // 1. Create the token
+        const { token, error } = await stripe.createToken(cardElement);
+        if (error) throw error;
+
+        // 2. Create a PaymentIntent to actually charge $1.00
+        const { paymentIntent, error: chargeError } = await stripe.createPaymentIntent({
+            amount: 100, // $1.00
+            currency: 'usd',
+            payment_method_data: {
+                card: {
+                    token: token.id,
+                },
+                capture_method: 'manual',
+            },
+        });
+
+        statusDiv.style.display = 'block';
+        
+        if (chargeError) {
+            statusDiv.className = 'dead';
+            statusDiv.innerText = `❌ Declined: ${chargeError.message}`;
+        } else {
+            statusDiv.className = 'live';
+            statusDiv.innerText = `✅ LIVE (Charged $1.00 - Pending)`;
+        }
+
+    } catch (err) {
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'dead';
+        statusDiv.innerText = `❌ Error: ${err.message}`;
+    }
+    btn.disabled = false;
+    btn.innerText = "Ping Card";
+} (Token: ${token.id})`;
             btn.disabled = false;
-            btn.innerText = "Ping Card";
+            btn.innerText = "async function pingCard() {
+    const statusDiv = document.getElementById('status');
+    const btn = document.getElementById('pingBtn');
+
+    // Reset UI
+    statusDiv.style.display = 'none';
+    statusDiv.className = '';
+    btn.disabled = true;
+    btn.innerText = "Pinging...";
+
+    try {
+        // 1. Create a PaymentMethod
+        const { paymentMethod, error } = await stripe.createPaymentMethod({
+            type: 'card',
+            card: {
+                number,
+                exp_month: parseInt(exp.split('/')[0]),
+                exp_year: parseInt(exp.split('/')[1]),
+                cvc
+            }
+        });
+        
+        // ... (rest of your old code)";
 
         } catch (err) {
             statusDiv.style.display = 'block';
